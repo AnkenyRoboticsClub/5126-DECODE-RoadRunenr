@@ -34,6 +34,9 @@ public class Shooter {
     private final InterpolatingMap FlywheelMap = new InterpolatingMap();
     PIDFCoefficients pid = new PIDFCoefficients(10, 3, 0, 12);
 
+    // TeleOp helper state: fire only once while button is held
+    private boolean distanceShotFiredThisHold = false;
+
 
 
 
@@ -172,5 +175,30 @@ public class Shooter {
     public double shootByDistance(double distance, LinearOpMode op){
         customShoot(FlywheelMap.get(distance), op);
         return FlywheelMap.get(distance);
+    }
+
+    /**
+     * TeleOp helper for "hold to spin up" behavior.
+     * While held, this continuously updates flywheel target based on distance and fires
+     * exactly once when at speed. Releasing the button re-arms the next shot.
+     */
+    public double shootByDistanceHoldOnce(boolean triggerHeld, double distance, LinearOpMode op) {
+        double mappedRpm = FlywheelMap.get(distance);
+
+        if (!triggerHeld) {
+            distanceShotFiredThisHold = false;
+            setKicker(false);
+            return mappedRpm;
+        }
+
+        setFlywheelRpm(mappedRpm);
+
+        if (!distanceShotFiredThisHold && flywheelAtSpeed()) {
+            feedOne(op);
+            intake();
+            distanceShotFiredThisHold = true;
+        }
+
+        return mappedRpm;
     }
 }
