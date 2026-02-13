@@ -76,20 +76,7 @@ public class GREENBOT extends LinearOpMode {
             if (gamepad2.a) shooter.feedOne(this); // extend + retract
             if (gamepad2.b) shooter.shootByDistance(vision.getDistance(), this);
 
-            if (gamepad2.y){
-                shooter.shootByDistance(vision.getDistance(), this);
-                /*
-                if (shooter.flywheelAtSpeed()){
-                    timer.reset();
-                    if (timer.seconds() < RobotConstants.KICK_TIME_MS) {
-                        shooter.feedOne(this);
-                    }
-                    while (timer.seconds() > (RobotConstants.KICK_TIME_MS)) {
-                        shooter.intake();
-                    }
-                }
-                */
-            }
+            shooter.shootByDistanceHoldOnce(gamepad2.y, vision.getDistance(), this);
             //=============================
             /*
             if (gamepad1.dpad_right) drive.nudgeRight();
