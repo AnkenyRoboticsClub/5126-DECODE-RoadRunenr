@@ -82,6 +82,10 @@ public class RobotConstants {
     // ★ YOU MUST UPDATE THIS using LLDebug ★
     public static double LL_TARGET_AREA = 1.45;
 
+    // Goal AprilTag IDs
+    public static final int LL_BLUE_GOAL_TAG_ID = 20;
+    public static final int LL_RED_GOAL_TAG_ID  = 24;
+
     // Tolerances for stopping
     public static final double LL_AIM_TOL_DEG      = 1.5;
     public static final double LL_APPROACH_TOL_TA  = 0.05;

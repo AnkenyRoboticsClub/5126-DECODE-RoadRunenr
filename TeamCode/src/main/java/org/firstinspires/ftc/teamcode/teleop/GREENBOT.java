@@ -58,15 +58,6 @@ public class GREENBOT extends LinearOpMode {
             // Shooter
             shooter.update();
 
-            if (gamepad2.x) {
-                shooter.intakeReverse();
-            } else if (gamepad2.left_bumper || gamepad1.b) {
-                shooter.intake();
-            } else {
-                shooter.stopIntake();
-            }
-            shooter.stopIntake();
-
             //Driver 2 ====================
             if (gamepad2.right_trigger > 0.1) shooter.farShoot();
             else if (gamepad2.left_trigger > 0.1) shooter.closeShoot();
