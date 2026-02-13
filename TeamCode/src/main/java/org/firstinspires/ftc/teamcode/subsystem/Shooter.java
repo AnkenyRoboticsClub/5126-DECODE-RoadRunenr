@@ -8,12 +8,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.common.InterpolatingMap;
 
 import org.firstinspires.ftc.teamcode.common.RobotConstants;
-
-import java.util.TreeMap;
 
 public class Shooter {
 
@@ -23,7 +20,6 @@ public class Shooter {
     private final DcMotor intake;
 
     // RPM tracking
-    private final ElapsedTime rpmTimer = new ElapsedTime();
     private double rpmFiltered = 0.0;
     private double targetRpm = 0.0;
 
@@ -36,9 +32,6 @@ public class Shooter {
 
     // TeleOp helper state: fire only once while button is held
     private boolean distanceShotFiredThisHold = false;
-
-
-
 
     public Shooter(HardwareMap hw) {
         fly  = (DcMotorEx) hw.dcMotor.get(RobotConstants.M_FLY);
@@ -61,7 +54,6 @@ public class Shooter {
         intake.setPower(0);
         kick.setPosition(RobotConstants.KICK_RETRACT);
 
-        rpmTimer.reset();
         //         (Distance, power/rpm)
         FlywheelMap.put(0.0, 670.0);
         FlywheelMap.put(0.01, 670.0);   // close shot | 21in
@@ -70,12 +62,14 @@ public class Shooter {
         FlywheelMap.put(0.475, 940.0);  // far shot | 116in
     }
 
+    private double getFlywheelRpmInstant() {
+        double ticksPerSecond = fly.getVelocity();
+        return (ticksPerSecond / RobotConstants.TICKS_PER_MOTOR_REV) * 60.0;
+    }
+
     /** Call this every loop (TeleOp/Auto) to keep rpmFiltered updated. */
     public void update() {
-        double ticksPerSecond = fly.getVelocity(); // encoder ticks / second
-        double rpmNow = (ticksPerSecond / RobotConstants.TICKS_PER_MOTOR_REV) * 60.0;
-
-        // Exponential moving average filter
+        double rpmNow = getFlywheelRpmInstant();
         rpmFiltered = (RPM_ALPHA * rpmNow) + ((1.0 - RPM_ALPHA) * rpmFiltered);
     }
 
@@ -91,12 +85,12 @@ public class Shooter {
 
     /** True when we're close enough to the target to confidently shoot. */
     public boolean atSpeed() {
-        return Math.abs(getFlywheelRpm() - targetRpm) <= AT_SPEED_TOL_RPM;
+        return Math.abs(getFlywheelRpmInstant() - targetRpm) <= AT_SPEED_TOL_RPM;
     }
 
     // ----- Flywheel controls -----
     public boolean flywheelAtSpeed(){
-        return Math.abs(getFlywheelRpm() - targetRpm) <= AT_SPEED_TOL_RPM;
+        return atSpeed();
     }
 
 
@@ -168,8 +162,16 @@ public class Shooter {
         flick(op);
     }
 
-    private void spinUpAndWait(Shooter shooter, double targetRpm, double timeoutSec) {
-        shooter.setFlywheelRpm(targetRpm);
+    public boolean waitForAtSpeed(LinearOpMode op, long timeoutMs) {
+        long start = System.currentTimeMillis();
+        while (op.opModeIsActive() && (System.currentTimeMillis() - start) < timeoutMs) {
+            update();
+            if (flywheelAtSpeed()) {
+                return true;
+            }
+            op.idle();
+        }
+        return false;
     }
 
     public double shootByDistance(double distance, LinearOpMode op){
