@@ -58,14 +58,19 @@ public final class MecanumDrive {
         // TODO: fill in these values based on
         //   see https://ftc-docs.firstinspires.org/en/latest/programming_resources/imu/imu.html?highlight=imu#physical-hub-mounting
         public RevHubOrientationOnRobot.LogoFacingDirection logoFacingDirection =
-                RevHubOrientationOnRobot.LogoFacingDirection.UP;
+                RevHubOrientationOnRobot.LogoFacingDirection.LEFT;
         public RevHubOrientationOnRobot.UsbFacingDirection usbFacingDirection =
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
         // drive model parameters
-        public double inPerTick = 1;
-        public double lateralInPerTick = inPerTick;
-        public double trackWidthTicks = 0;
+        public double motorTicksPerRev = 28;      // depends on your motor/encoder
+        public double wheelDiameterInches = 4.0944882;   // your mecanum diameter
+
+        public double ticksPerWheelRev = motorTicksPerRev * (48.0 / 10.0); // 4.8x
+        public double inPerTick = (Math.PI * wheelDiameterInches) / ticksPerWheelRev;
+        public double lateralInPerTick = inPerTick * 1.10;
+        public double trackWidthTicks = 9.24 / inPerTick; // replace 9.24 with your L/R wheel center distance
+
 
         // feedforward parameters (in tick units)
         public double kS = 0;
@@ -73,18 +78,18 @@ public final class MecanumDrive {
         public double kA = 0;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 50;
-        public double minProfileAccel = -30;
-        public double maxProfileAccel = 50;
+        public double maxWheelVel = 45;
+        public double minProfileAccel = -40;
+        public double maxProfileAccel = 40;
 
         // turn profile parameters (in radians)
-        public double maxAngVel = Math.PI; // shared with path
-        public double maxAngAccel = Math.PI;
+        public double maxAngVel = Math.toRadians(180);
+        public double maxAngAccel = Math.toRadians(180);
 
         // path controller gains
-        public double axialGain = 0.0;
-        public double lateralGain = 0.0;
-        public double headingGain = 0.0; // shared with turn
+        public double axialGain = 6.0;
+        public double lateralGain = 6.0;
+        public double headingGain = 8.0; // shared with turn
 
         public double axialVelGain = 0.0;
         public double lateralVelGain = 0.0;
