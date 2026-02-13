@@ -38,10 +38,6 @@ public class RobotConstants {
     public static final String S_INTAKE = "servoI";
 
     public static final String PINPOINT = "pinpoint";
-    
-    //ViperCode V
-    //public static final String M_VL = "motorVL";
-    //public static final String M_VR = "motorVR";
 
     // IMU name
     public static final String IMU = "imu";

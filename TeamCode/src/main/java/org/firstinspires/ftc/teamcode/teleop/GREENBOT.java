@@ -55,6 +55,22 @@ public class GREENBOT extends LinearOpMode {
                 if (gamepad1.right_bumper) drive.assistRight();
             }
 
+            if (gamepad1.dpad_right) drive.nudgeRight(this);
+            if (gamepad1.dpad_left)  drive.nudgeLeft(this);
+            if (gamepad1.dpad_up)    drive.nudgeForward(this);
+            if (gamepad1.dpad_down)  drive.nudgeBack(this);
+            //Buttons left: y,x
+            //============================
+
+            if (gamepad2.x) {
+                shooter.intakeReverse();
+            } else if (gamepad2.left_bumper || gamepad1.b) {
+                shooter.intake();
+            } else {
+                shooter.stopIntake();
+            }
+
+
             // Shooter
             shooter.update();
 
@@ -69,13 +85,8 @@ public class GREENBOT extends LinearOpMode {
             if (gamepad2.b) shooter.shootByDistance(vision.getDistance(), this);
 
             shooter.shootByDistanceHoldOnce(gamepad2.y, vision.getDistance(), this);
+            //Buttons left: Y, start, options, Dpads
             //=============================
-            /*
-            if (gamepad1.dpad_right) drive.nudgeRight();
-            if (gamepad1.dpad_left)  drive.nudgeLeft();
-            if (gamepad1.dpad_up)    drive.nudgeForward();
-            if (gamepad1.dpad_down)  drive.nudgeBack();
-            */
 
             telemetry.addData("Flywheel", gamepad2.right_trigger > 0.1 ? "ON" : "OFF");
             telemetry.addData("Flywheel RPM", shooter.getFlywheelRpm());
