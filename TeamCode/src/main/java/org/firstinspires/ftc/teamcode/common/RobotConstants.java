@@ -63,6 +63,9 @@ public class RobotConstants {
     public static final String LL_DEVICE_NAME = "limelight";
 
     // Tuning multipliers
+    // Turn direction for LL corrections. Use +1.0 or -1.0 depending on drivetrain/IMU convention.
+    public static final double LL_TURN_DIRECTION = -1.0;
+
     public static final double LL_K_TURN      = 0.035;   // turning gain
     public static final double LL_K_FORWARD   = 0.25;    // forward gain
 

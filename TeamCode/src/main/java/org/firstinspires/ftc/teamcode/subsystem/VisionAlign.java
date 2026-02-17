@@ -215,7 +215,7 @@ public class VisionAlign {
     private static double turnCmd(double tx) {
         if (Math.abs(tx) <= RobotConstants.LL_AIM_TOL_DEG) return 0;
 
-        double u = RobotConstants.LL_K_TURN * tx;
+        double u = RobotConstants.LL_TURN_DIRECTION * RobotConstants.LL_K_TURN * tx;
         u += Math.signum(u) * RobotConstants.LL_MIN_TURN;
         return clamp(u, -RobotConstants.LL_MAX_TURN, RobotConstants.LL_MAX_TURN);
     }

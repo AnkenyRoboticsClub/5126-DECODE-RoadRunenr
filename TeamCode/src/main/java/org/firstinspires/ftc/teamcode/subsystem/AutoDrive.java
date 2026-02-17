@@ -207,7 +207,10 @@ public class AutoDrive {
 
             // IMU heading correction
             double currentDeg = Math.toDegrees(imu.getHeadingRad());
-            double error = angleWrapDeg(currentDeg - targetDeg);
+            double error = angleWrapDeg(targetDeg - currentDeg);
+            if (Math.abs(error) < 0.75) {
+                error = 0;
+            }
             double rawTurn = kP * error;
 
             // At low drive speed, still allow a little correction authority.
