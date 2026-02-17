@@ -3,9 +3,6 @@ package org.firstinspires.ftc.teamcode.teleop;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.teamcode.common.RobotConstants;
 import org.firstinspires.ftc.teamcode.subsystem.DriveTrain;
 import org.firstinspires.ftc.teamcode.subsystem.ImuUtil;
 import org.firstinspires.ftc.teamcode.subsystem.Shooter;
@@ -18,8 +15,6 @@ public class GREENBOT extends LinearOpMode {
     private ImuUtil imu;
     private Shooter shooter;
     private VisionAlign vision;
-    ElapsedTime timer = new ElapsedTime();
-
 
     @Override
     public void runOpMode() {
@@ -27,6 +22,7 @@ public class GREENBOT extends LinearOpMode {
         imu     = new ImuUtil(hardwareMap);
         shooter = new Shooter(hardwareMap);
         vision  = new VisionAlign(drive, imu);
+        vision.start(hardwareMap);
 
         for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
@@ -36,7 +32,6 @@ public class GREENBOT extends LinearOpMode {
         waitForStart();
         if (isStopRequested()) return;
 
-        boolean prevUnjam = false;
         while (opModeIsActive()) {
             double y  = -gamepad1.left_stick_y;
             double x  =  gamepad1.left_stick_x;
@@ -48,19 +43,20 @@ public class GREENBOT extends LinearOpMode {
             boolean fast = gamepad1.right_trigger > 0.1;
             boolean slow = gamepad1.left_trigger  > 0.1;
 
-            // Drive
-            drive.driveFieldCentric(x, y, rx, heading, slow, fast, false);
+            // Driver 1 aim-assist is non-blocking while A is held
+            if (gamepad1.a) {
+                vision.faceTagStepRobotCentric();
+            } else {
+                // Drive
+                drive.driveFieldCentric(x, y, rx, heading, slow, fast, false);
+
+                // Driver 1 manual assists
+                if (gamepad1.left_bumper)  drive.assistLeft();
+                if (gamepad1.right_bumper) drive.assistRight();
+            }
+
             // Shooter
             shooter.update();
-
-
-            //Driver 1 ====================
-            if (gamepad1.left_bumper)  drive.assistLeft();
-            if (gamepad1.right_bumper) drive.assistRight();
-
-            //if (gamepad1.a) vision.aimAndApproachStepRobotCentric();
-            if (gamepad1.a) vision.faceTagUntil(this);
-            //=============================
 
             //Driver 2 ====================
             if (gamepad2.right_trigger > 0.1) shooter.farShoot();
@@ -76,20 +72,7 @@ public class GREENBOT extends LinearOpMode {
             if (gamepad2.a) shooter.feedOne(this); // extend + retract
             if (gamepad2.b) shooter.shootByDistance(vision.getDistance(), this);
 
-            if (gamepad2.y){
-                shooter.shootByDistance(vision.getDistance(), this);
-                /*
-                if (shooter.flywheelAtSpeed()){
-                    timer.reset();
-                    if (timer.seconds() < RobotConstants.KICK_TIME_MS) {
-                        shooter.feedOne(this);
-                    }
-                    while (timer.seconds() > (RobotConstants.KICK_TIME_MS)) {
-                        shooter.intake();
-                    }
-                }
-                */
-            }
+            shooter.shootByDistanceHoldOnce(gamepad2.y, vision.getDistance(), this);
             //=============================
             /*
             if (gamepad1.dpad_right) drive.nudgeRight();
@@ -108,7 +91,10 @@ public class GREENBOT extends LinearOpMode {
             double avgAbs = (Math.abs(drive.getRPM(drive.fl)) + Math.abs(drive.getRPM(drive.fr)) +
                              Math.abs(drive.getRPM(drive.bl)) + Math.abs(drive.getRPM(drive.br))) / 4.0;
             telemetry.addData("Avg (abs)", "%.1f", avgAbs);
+            telemetry.addData("Aim Assist", gamepad1.a ? "ON (hold A)" : "OFF");
             telemetry.update();
         }
+
+        vision.stop();
     }
 }

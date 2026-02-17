@@ -31,32 +31,35 @@ public class Ball3Far extends LinearOpMode {
         if (isStopRequested()) return;
 
         // ---------------------------
-        // 1. SHOOT ONE
+        // 1. Aim at tag
         // ---------------------------
         vision.faceTagUntil(this);
-        sleep(1500);
+        sleep(250);
+
+        // ---------------------------
+        // 2. Spin to far-shot RPM
+        // ---------------------------
         shooter.farShoot();
-        sleep(1800);            // wait for flywheel to stabilize
+        shooter.waitForAtSpeed(this, 2500);
 
+        // ---------------------------
+        // 3. Kick first ball
+        // ---------------------------
         shooter.feedOne(this);
 
         // ---------------------------
-        // 2. INTAKE 2nd ball into fly wheel
+        // 4. Wait for RPM recovery, then intake next 2
         // ---------------------------
-        sleep(450);
+        shooter.waitForAtSpeed(this, 1500);
         shooter.intake();
-        sleep(500);
-        shooter.intakeReverse();
-        sleep(3000);
-
-        shooter.feedOne(this);
+        sleep(2200);
+        shooter.stopIntake();
 
         // ---------------------------
-        // 3. Move off line
+        // 5. Move off line
         // ---------------------------
         drive.driveForwardSim();
         sleep(500);
-
 
         shooter.stop();
         drive.stopAll();

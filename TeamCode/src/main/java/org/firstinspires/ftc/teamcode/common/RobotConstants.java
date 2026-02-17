@@ -67,6 +67,9 @@ public class RobotConstants {
     public static final String LL_DEVICE_NAME = "limelight";
 
     // Tuning multipliers
+    // Turn direction for LL corrections. Use +1.0 or -1.0 depending on drivetrain/IMU convention.
+    public static final double LL_TURN_DIRECTION = -1.0;
+
     public static final double LL_K_TURN      = 0.035;   // turning gain
     public static final double LL_K_FORWARD   = 0.25;    // forward gain
 
@@ -81,6 +84,10 @@ public class RobotConstants {
     // TA value when robot is at perfect shooting distance
     // ★ YOU MUST UPDATE THIS using LLDebug ★
     public static double LL_TARGET_AREA = 1.45;
+
+    // Goal AprilTag IDs
+    public static final int LL_BLUE_GOAL_TAG_ID = 20;
+    public static final int LL_RED_GOAL_TAG_ID  = 24;
 
     // Tolerances for stopping
     public static final double LL_AIM_TOL_DEG      = 1.5;

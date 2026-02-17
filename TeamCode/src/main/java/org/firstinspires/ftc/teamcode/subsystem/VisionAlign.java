@@ -46,13 +46,11 @@ public class VisionAlign {
             return false;
         }
 
-        java.util.List<FiducialResult> tags = r.getFiducialResults();
-        if (tags == null || tags.isEmpty()) {
+        FiducialResult tag = findGoalTag(r);
+        if (tag == null) {
             drive.stopAll();
             return false;
         }
-
-        FiducialResult tag = tags.get(0);
         Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
         if (tagPoseRobot == null) {
             drive.stopAll();
@@ -89,29 +87,49 @@ public class VisionAlign {
 
     // ---------------------------- TeleOp step functions ----------------------------
 
-    public boolean aimStepRobotCentric() { //rotates the robot to center the tag horizontally
+    public boolean aimStepRobotCentric() { //rotates the robot to center the goal tag horizontally
         LLResult r = latest();
-        if (r == null || !r.isValid()) {
+        FiducialResult tag = findGoalTag(r);
+        if (tag == null) {
             drive.stopAll();
             return false;
         }
 
-        double turn = turnCmd(r.getTx());
+        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
+        if (tagPoseRobot == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Position p = tagPoseRobot.getPosition();
+        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
+
+        double turn = turnCmd(bearingDeg);
         drive.driveRobot(0, 0, turn);
-        return Math.abs(r.getTx()) <= RobotConstants.LL_AIM_TOL_DEG;
+        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
     }
 
-    public boolean aimAndApproachStepRobotCentric() { //Try and centers the robot with the Tag and approaches it
+    public boolean aimAndApproachStepRobotCentric() { //Try and center robot with goal tag and approach it
         LLResult r = latest();
-        if (r == null || !r.isValid()) {
+        FiducialResult tag = findGoalTag(r);
+        if (r == null || !r.isValid() || tag == null) {
             drive.stopAll();
             return false;
         }
 
-        double turn = turnCmd(r.getTx());
+        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
+        if (tagPoseRobot == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Position p = tagPoseRobot.getPosition();
+        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
+
+        double turn = turnCmd(bearingDeg);
         double fwd  = forwardCmd(r.getTa());
         drive.driveRobot(0, fwd, turn);
-        return onTarget(r.getTx(), r.getTa());
+        return onTarget(bearingDeg, r.getTa());
     }
 
     // ---------------------------- Auto blocking functions ----------------------------
@@ -138,17 +156,9 @@ public class VisionAlign {
 
     public int getTagId() {
         LLResult r = latest();
-        if (r == null || !r.isValid()) return -1;
-
-        // Get list of fiducial (AprilTag) detections
-        java.util.List<FiducialResult> tags = r.getFiducialResults();
-
-        if (tags == null || tags.isEmpty()) {
-            return -1;  // No tags detected
-        }
-
-        // Return ID of the first (main) tag
-        return tags.get(0).getFiducialId();
+        FiducialResult tag = findGoalTag(r);
+        if (tag == null) return -1;
+        return tag.getFiducialId();
     }
 
     public String motifFromTag(int id) {
@@ -164,16 +174,29 @@ public class VisionAlign {
         int id = getTagId();
         return motifFromTag(id);
     }
+    private FiducialResult findGoalTag(LLResult r) {
+        if (r == null || !r.isValid()) return null;
+
+        java.util.List<FiducialResult> tags = r.getFiducialResults();
+        if (tags == null || tags.isEmpty()) return null;
+
+        for (FiducialResult tag : tags) {
+            int id = tag.getFiducialId();
+            if (id == RobotConstants.LL_BLUE_GOAL_TAG_ID || id == RobotConstants.LL_RED_GOAL_TAG_ID) {
+                return tag;
+            }
+        }
+        return null;
+    }
+
     // ---------------------------- Math Helpers ----------------------------
 
     public double getDistance() {
         LLResult r = latest();
         if (r == null || !r.isValid()) return -1;
 
-        java.util.List<FiducialResult> tags = r.getFiducialResults();
-        if (tags == null || tags.isEmpty()) return -1;
-
-        FiducialResult tag = tags.get(0);
+        FiducialResult tag = findGoalTag(r);
+        if (tag == null) return -1;
 
         // Tag position relative to the robot (robot-space)
         Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();  // exists in the FTC Limelight API :contentReference[oaicite:1]{index=1}
@@ -192,7 +215,7 @@ public class VisionAlign {
     private static double turnCmd(double tx) {
         if (Math.abs(tx) <= RobotConstants.LL_AIM_TOL_DEG) return 0;
 
-        double u = RobotConstants.LL_K_TURN * tx;
+        double u = RobotConstants.LL_TURN_DIRECTION * RobotConstants.LL_K_TURN * tx;
         u += Math.signum(u) * RobotConstants.LL_MIN_TURN;
         return clamp(u, -RobotConstants.LL_MAX_TURN, RobotConstants.LL_MAX_TURN);
     }
