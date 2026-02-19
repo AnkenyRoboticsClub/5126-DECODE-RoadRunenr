@@ -12,6 +12,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.common.RobotConstants;
 
 public class VisionAlign {
+    private static final double TEST_TURN_KP = 0.020;
+    private static final double TEST_TURN_MIN = 0.06;
+    private static final double TEST_TURN_MAX = 0.22;
 
     private final DriveTrain drive;
     private final ImuUtil imu;
@@ -262,6 +265,19 @@ public class VisionAlign {
         double u = RobotConstants.LL_TURN_DIRECTION * RobotConstants.LL_K_TURN * tx;
         u += Math.signum(u) * RobotConstants.LL_MIN_TURN;
         return clamp(u, -RobotConstants.LL_MAX_TURN, RobotConstants.LL_MAX_TURN);
+    }
+
+    private static double testTurnCmd(double bearingDeg) {
+        if (Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG) return 0;
+
+        double u = TEST_TURN_KP * bearingDeg;
+
+        // Avoid adding static-friction boost when close to target to reduce overshoot.
+        if (Math.abs(bearingDeg) > 3.0) {
+            u += Math.signum(u) * TEST_TURN_MIN;
+        }
+
+        return clamp(u, -TEST_TURN_MAX, TEST_TURN_MAX);
     }
 
     private static double forwardCmd(double ta) {
