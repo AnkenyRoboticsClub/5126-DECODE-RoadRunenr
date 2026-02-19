@@ -97,10 +97,9 @@ public class VisionAlign {
         }
 
         Position p = tagPoseRobot.getPosition();
-        // For this test auto, invert Y sign so left/right steering matches physical robot behavior.
-        double bearingDeg = Math.toDegrees(Math.atan2(-p.y, p.x));
+        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
 
-        double turn = testTurnCmd(bearingDeg);
+        double turn = turnCmd(bearingDeg);
         drive.driveRobot(0, 0, turn);
 
         return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
