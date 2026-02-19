@@ -12,6 +12,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.common.RobotConstants;
 
 public class VisionAlign {
+    private static final double TEST_TURN_KP = 0.020;
+    private static final double TEST_TURN_MIN = 0.06;
+    private static final double TEST_TURN_MAX = 0.22;
 
     private final DriveTrain drive;
     private final ImuUtil imu;
@@ -69,6 +72,35 @@ public class VisionAlign {
         //If turning weird, add (-) to the y
 
         double turn = turnCmd(bearingDeg);
+        drive.driveRobot(0, 0, turn);
+
+        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
+    }
+
+    public boolean faceAnyTagStepRobotCentric() {
+        LLResult r = latest();
+        if (r == null || !r.isValid()) {
+            drive.stopAll();
+            return false;
+        }
+
+        FiducialResult tag = findAnyTag(r);
+        if (tag == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
+        if (tagPoseRobot == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Position p = tagPoseRobot.getPosition();
+        // For this test auto, invert Y sign so left/right steering matches physical robot behavior.
+        double bearingDeg = Math.toDegrees(Math.atan2(-p.y, p.x));
+
+        double turn = testTurnCmd(bearingDeg);
         drive.driveRobot(0, 0, turn);
 
         return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
@@ -161,6 +193,13 @@ public class VisionAlign {
         return tag.getFiducialId();
     }
 
+    public int getAnyTagId() {
+        LLResult r = latest();
+        FiducialResult tag = findAnyTag(r);
+        if (tag == null) return -1;
+        return tag.getFiducialId();
+    }
+
     public String motifFromTag(int id) {
         switch (id) {
             case 21: return "GPP";
@@ -174,6 +213,15 @@ public class VisionAlign {
         int id = getTagId();
         return motifFromTag(id);
     }
+    private FiducialResult findAnyTag(LLResult r) {
+        if (r == null || !r.isValid()) return null;
+
+        java.util.List<FiducialResult> tags = r.getFiducialResults();
+        if (tags == null || tags.isEmpty()) return null;
+
+        return tags.get(0);
+    }
+
     private FiducialResult findGoalTag(LLResult r) {
         if (r == null || !r.isValid()) return null;
 
@@ -218,6 +266,19 @@ public class VisionAlign {
         double u = RobotConstants.LL_TURN_DIRECTION * RobotConstants.LL_K_TURN * tx;
         u += Math.signum(u) * RobotConstants.LL_MIN_TURN;
         return clamp(u, -RobotConstants.LL_MAX_TURN, RobotConstants.LL_MAX_TURN);
+    }
+
+    private static double testTurnCmd(double bearingDeg) {
+        if (Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG) return 0;
+
+        double u = TEST_TURN_KP * bearingDeg;
+
+        // Avoid adding static-friction boost when close to target to reduce overshoot.
+        if (Math.abs(bearingDeg) > 3.0) {
+            u += Math.signum(u) * TEST_TURN_MIN;
+        }
+
+        return clamp(u, -TEST_TURN_MAX, TEST_TURN_MAX);
     }
 
     private static double forwardCmd(double ta) {
