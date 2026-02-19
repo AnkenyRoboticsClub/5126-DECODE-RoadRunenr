@@ -74,6 +74,34 @@ public class VisionAlign {
         return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
     }
 
+    public boolean faceAnyTagStepRobotCentric() {
+        LLResult r = latest();
+        if (r == null || !r.isValid()) {
+            drive.stopAll();
+            return false;
+        }
+
+        FiducialResult tag = findAnyTag(r);
+        if (tag == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
+        if (tagPoseRobot == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Position p = tagPoseRobot.getPosition();
+        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
+
+        double turn = turnCmd(bearingDeg);
+        drive.driveRobot(0, 0, turn);
+
+        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
+    }
+
     public boolean faceTagUntil(LinearOpMode op) {
         ElapsedTime t = new ElapsedTime();
         while (op.opModeIsActive() && t.seconds() < RobotConstants.LL_ALIGN_TIMEOUT_S) {
@@ -161,6 +189,13 @@ public class VisionAlign {
         return tag.getFiducialId();
     }
 
+    public int getAnyTagId() {
+        LLResult r = latest();
+        FiducialResult tag = findAnyTag(r);
+        if (tag == null) return -1;
+        return tag.getFiducialId();
+    }
+
     public String motifFromTag(int id) {
         switch (id) {
             case 21: return "GPP";
@@ -174,6 +209,15 @@ public class VisionAlign {
         int id = getTagId();
         return motifFromTag(id);
     }
+    private FiducialResult findAnyTag(LLResult r) {
+        if (r == null || !r.isValid()) return null;
+
+        java.util.List<FiducialResult> tags = r.getFiducialResults();
+        if (tags == null || tags.isEmpty()) return null;
+
+        return tags.get(0);
+    }
+
     private FiducialResult findGoalTag(LLResult r) {
         if (r == null || !r.isValid()) return null;
 
