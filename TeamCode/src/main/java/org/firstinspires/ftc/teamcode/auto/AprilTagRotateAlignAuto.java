@@ -7,7 +7,7 @@ import org.firstinspires.ftc.teamcode.subsystem.DriveTrain;
 import org.firstinspires.ftc.teamcode.subsystem.ImuUtil;
 import org.firstinspires.ftc.teamcode.subsystem.VisionAlign;
 
-@Autonomous(name = "AprilTag Rotate Align", group = "Auto")
+@Autonomous(name = "AprilTag Rotate", group = "Auto")
 public class AprilTagRotateAlignAuto extends LinearOpMode {
 
     @Override

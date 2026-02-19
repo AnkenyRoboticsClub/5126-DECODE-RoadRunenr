@@ -43,7 +43,7 @@ public class RobotConstants {
     public static final String IMU = "imu";
 
     public static final double TICKS_PER_MOTOR_REV = 28.0 * 4.0; // = 112
-    public static final double GEAR_RATIO = 48.0 / 10.0;  // 4.8 : 1
+    public static final double GEAR_RATIO = 49.0 / 10.0;  // 4.8 : 1
     public static final double WHEEL_DIAMETER_IN = 4.0944882; //or 104mm i think
     public static final double WHEEL_CIRCUMFERENCE_IN =
             Math.PI * WHEEL_DIAMETER_IN;

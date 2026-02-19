@@ -55,12 +55,6 @@ public class GREENBOT extends LinearOpMode {
                 if (gamepad1.right_bumper) drive.assistRight();
             }
 
-
-                // Driver 1 manual assists
-                if (gamepad1.left_bumper)  drive.assistLeft();
-                if (gamepad1.right_bumper) drive.assistRight();
-            }
-
             if (gamepad1.dpad_right) drive.nudgeRight(this);
             if (gamepad1.dpad_left)  drive.nudgeLeft(this);
             if (gamepad1.dpad_up)    drive.nudgeForward(this);
@@ -107,7 +101,5 @@ public class GREENBOT extends LinearOpMode {
             telemetry.addData("Aim Assist", gamepad1.a ? "ON (hold A)" : "OFF");
             telemetry.update();
         }
-
-        vision.stop();
     }
 }

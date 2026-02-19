@@ -68,7 +68,7 @@ public class VisionAlign {
         double y = p.y;
 
         // Bearing to the tag in robot frame (radians -> degrees)
-        double bearingDeg = Math.toDegrees(Math.atan2(y, x));
+        double bearingDeg = Math.toDegrees(Math.atan2(-y, x));
         //If turning weird, add (-) to the y
 
         double turn = turnCmd(bearingDeg);
@@ -97,7 +97,7 @@ public class VisionAlign {
         }
 
         Position p = tagPoseRobot.getPosition();
-        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
+        double bearingDeg = Math.toDegrees(Math.atan2(-p.y, p.x));
 
         double turn = turnCmd(bearingDeg);
         drive.driveRobot(0, 0, turn);

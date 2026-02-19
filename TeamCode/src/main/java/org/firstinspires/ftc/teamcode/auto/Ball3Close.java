@@ -27,10 +27,8 @@ public class Ball3Close extends LinearOpMode {
         // ---------------------------
         // 1. Blind backup while holding heading
         // ---------------------------
-        drive.driveStraightInchesHoldHeading(this, imu, -6, 0.10, 0.05, 0.10);
-        sleep(550);
-        drive.turnToHeadingDegrees(this, imu, 0, 0.15, 1);
-        sleep(200);
+        drive.driveStraightInchesHoldHeading(this, imu, 10, 0.10, 0.05, 0.10);
+        sleep(750);
 
         // ---------------------------
         // 2. Spin up and kick first ball
