@@ -12,13 +12,33 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.common.RobotConstants;
 
 public class VisionAlign {
-    private static final double TEST_TURN_KP = 0.020;
-    private static final double TEST_TURN_MIN = 0.06;
-    private static final double TEST_TURN_MAX = 0.22;
+
+    // ---------------------------- Tuning knobs ----------------------------
+
+    // Your camera is RIGHT SIDE UP. Leave this false.
+    // If you ever mount the Limelight 180° (upside down), set true.
+    private static final boolean CAMERA_UPSIDE_DOWN = false;
+
+    // Noise deadband (deg). Under this, we do 0 turn to avoid wiggle.
+    private static final double BEARING_DEADBAND_DEG = 1.5;
+
+    // "Close enough" to stop (deg). If you already have this in RobotConstants, keep using it.
+    // We'll use RobotConstants.LL_AIM_TOL_DEG as the final "done" check.
+
+    // Simple smoothing for bearing to kill jitter (0..1). Higher = more responsive, lower = smoother.
+    private static final double BEARING_ALPHA = 0.35;
+
+    // Optional: cap how fast the turn command can change each loop (prevents snap)
+    private static final double TURN_SLEW_PER_LOOP = 0.08;
+
+    // ---------------------------- Members ----------------------------
 
     private final DriveTrain drive;
-    private final ImuUtil imu;
+    private final ImuUtil imu; // not required for robot-centric, but keeping because you pass it in
     private Limelight3A limelight;
+
+    private double filteredBearingDeg = 0.0;
+    private double lastTurnCmd = 0.0;
 
     public VisionAlign(DriveTrain drive, ImuUtil imu) {
         this.drive = drive;
@@ -27,7 +47,6 @@ public class VisionAlign {
 
     public void start(HardwareMap hw) {
         limelight = hw.get(Limelight3A.class, RobotConstants.LL_DEVICE_NAME);
-
         limelight.setPollRateHz(100);
         limelight.start();
     }
@@ -41,106 +60,25 @@ public class VisionAlign {
         return limelight.getLatestResult();
     }
 
-    // Rotate ONLY until the robot is facing the tag (using robot-space pose, not tx)
-    public boolean faceTagStepRobotCentric() {
-        LLResult r = latest();
-        if (r == null || !r.isValid()) {
-            drive.stopAll();
-            return false;
-        }
-
-        FiducialResult tag = findGoalTag(r);
-        if (tag == null) {
-            drive.stopAll();
-            return false;
-        }
-        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
-        if (tagPoseRobot == null) {
-            drive.stopAll();
-            return false;
-        }
-
-        Position p = tagPoseRobot.getPosition();
-
-        // Limelight FTC convention is typically:
-        // x = forward, y = right (units usually meters)
-        double x = p.x;
-        double y = p.y;
-
-        // Bearing to the tag in robot frame (radians -> degrees)
-        double bearingDeg = Math.toDegrees(Math.atan2(-y, x));
-        //If turning weird, add (-) to the y
-
-        double turn = turnCmd(bearingDeg);
-        drive.driveRobot(0, 0, turn);
-
-        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
-    }
-
-    public boolean faceAnyTagStepRobotCentric() {
-        LLResult r = latest();
-        if (r == null || !r.isValid()) {
-            drive.stopAll();
-            return false;
-        }
-
-        FiducialResult tag = findAnyTag(r);
-        if (tag == null) {
-            drive.stopAll();
-            return false;
-        }
-
-        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
-        if (tagPoseRobot == null) {
-            drive.stopAll();
-            return false;
-        }
-
-        Position p = tagPoseRobot.getPosition();
-        double bearingDeg = Math.toDegrees(Math.atan2(-p.y, p.x));
-
-        double turn = turnCmd(bearingDeg);
-        drive.driveRobot(0, 0, turn);
-
-        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
-    }
-
-    public boolean faceTagUntil(LinearOpMode op) {
-        ElapsedTime t = new ElapsedTime();
-        while (op.opModeIsActive() && t.seconds() < RobotConstants.LL_ALIGN_TIMEOUT_S) {
-            if (faceTagStepRobotCentric()) break;
-            op.idle();
-        }
-        drive.stopAll();
-        return true;
-    }
-
-
     // ---------------------------- TeleOp step functions ----------------------------
 
-    public boolean aimStepRobotCentric() { //rotates the robot to center the goal tag horizontally
-        LLResult r = latest();
-        FiducialResult tag = findGoalTag(r);
-        if (tag == null) {
-            drive.stopAll();
-            return false;
-        }
-
-        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
-        if (tagPoseRobot == null) {
-            drive.stopAll();
-            return false;
-        }
-
-        Position p = tagPoseRobot.getPosition();
-        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
-
-        double turn = turnCmd(bearingDeg);
-        drive.driveRobot(0, 0, turn);
-        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
+    // Rotate ONLY until the robot is facing the GOAL tag (robot-space pose, not tx)
+    public boolean faceTagStepRobotCentric() {
+        return faceTagInternal(true);
     }
 
-    public boolean aimAndApproachStepRobotCentric() { //Try and center robot with goal tag and approach it
+    // Rotate to face ANY visible tag
+    public boolean faceAnyTagStepRobotCentric() {
+        return faceTagInternal(false);
+    }
+
+    // Backwards compatible: your other code calls these
+    public boolean aimStepRobotCentric() {
+        // Keep this as a synonym for "face goal tag"
+        return faceTagStepRobotCentric();
+    }
+
+    public boolean aimAndApproachStepRobotCentric() {
         LLResult r = latest();
         FiducialResult tag = findGoalTag(r);
         if (r == null || !r.isValid() || tag == null) {
@@ -154,25 +92,33 @@ public class VisionAlign {
             return false;
         }
 
-        Position p = tagPoseRobot.getPosition();
-        double bearingDeg = Math.toDegrees(Math.atan2(p.y, p.x));
+        // Bearing for turning
+        double bearingDeg = computeBearingDeg(tagPoseRobot);
+        bearingDeg = smoothBearing(bearingDeg);
 
-        double turn = turnCmd(bearingDeg);
-        double fwd  = forwardCmd(r.getTa());
+        double turn = turnCmdStable(bearingDeg);
+
+        // Forward based on target area (your existing logic)
+        double fwd = forwardCmd(r.getTa());
+
+        // Drive robot-centric: (strafe, forward, turn) -> your drive expects (x, y, rx) style
         drive.driveRobot(0, fwd, turn);
+
         return onTarget(bearingDeg, r.getTa());
     }
 
-    // ---------------------------- Auto blocking functions ----------------------------
-
-    public boolean aimUntil(LinearOpMode op) {
+    public boolean faceTagUntil(LinearOpMode op) {
         ElapsedTime t = new ElapsedTime();
         while (op.opModeIsActive() && t.seconds() < RobotConstants.LL_ALIGN_TIMEOUT_S) {
-            if (aimStepRobotCentric()) break;
+            if (faceTagStepRobotCentric()) break;
             op.idle();
         }
         drive.stopAll();
         return true;
+    }
+
+    public boolean aimUntil(LinearOpMode op) {
+        return faceTagUntil(op);
     }
 
     public boolean aimAndApproachUntil(LinearOpMode op) {
@@ -184,6 +130,8 @@ public class VisionAlign {
         drive.stopAll();
         return true;
     }
+
+    // ---------------------------- Tag utilities ----------------------------
 
     public int getTagId() {
         LLResult r = latest();
@@ -212,12 +160,11 @@ public class VisionAlign {
         int id = getTagId();
         return motifFromTag(id);
     }
+
     private FiducialResult findAnyTag(LLResult r) {
         if (r == null || !r.isValid()) return null;
-
         java.util.List<FiducialResult> tags = r.getFiducialResults();
         if (tags == null || tags.isEmpty()) return null;
-
         return tags.get(0);
     }
 
@@ -236,7 +183,88 @@ public class VisionAlign {
         return null;
     }
 
-    // ---------------------------- Math Helpers ----------------------------
+    // ---------------------------- Core logic ----------------------------
+
+    private boolean faceTagInternal(boolean goalOnly) {
+        LLResult r = latest();
+        if (r == null || !r.isValid()) {
+            drive.stopAll();
+            return false;
+        }
+
+        FiducialResult tag = goalOnly ? findGoalTag(r) : findAnyTag(r);
+        if (tag == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
+        if (tagPoseRobot == null) {
+            drive.stopAll();
+            return false;
+        }
+
+        double bearingDeg = computeBearingDeg(tagPoseRobot);
+        bearingDeg = smoothBearing(bearingDeg);
+
+        // Deadband so it stops hunting when basically centered
+        if (Math.abs(bearingDeg) <= BEARING_DEADBAND_DEG) {
+            drive.driveRobot(0, 0, 0);
+            lastTurnCmd = 0.0;
+            return true;
+        }
+
+        double turn = turnCmdStable(bearingDeg);
+        drive.driveRobot(0, 0, turn);
+
+        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG;
+    }
+
+    private double computeBearingDeg(Pose3D tagPoseRobot) {
+        Position p = tagPoseRobot.getPosition();
+        double x = p.x; // forward
+        double y = p.y; // sideways
+
+        // If camera is upside down, y flips (and often tx/ty too).
+        // You're right-side up, so this stays as-is.
+        if (CAMERA_UPSIDE_DOWN) {
+            y = -y;
+        }
+
+        // One consistent convention everywhere:
+        // bearing = atan2(y, x)
+        return Math.toDegrees(Math.atan2(y, x));
+    }
+
+    private double smoothBearing(double bearingDeg) {
+        // low-pass filter
+        filteredBearingDeg = filteredBearingDeg + BEARING_ALPHA * (bearingDeg - filteredBearingDeg);
+        return filteredBearingDeg;
+    }
+
+    // Turn command with: proportional + min turn + clamp + slew-rate limit
+    private double turnCmdStable(double bearingDeg) {
+        // Final tolerance: if inside aim tolerance, stop.
+        if (Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG) {
+            lastTurnCmd = 0.0;
+            return 0.0;
+        }
+
+        double u = RobotConstants.LL_TURN_DIRECTION * RobotConstants.LL_K_TURN * bearingDeg;
+
+        // Static friction bump ONLY when you're not super close, otherwise it causes overshoot.
+        if (Math.abs(bearingDeg) > 3.0) {
+            u += Math.signum(u) * RobotConstants.LL_MIN_TURN;
+        }
+
+        u = clamp(u, -RobotConstants.LL_MAX_TURN, RobotConstants.LL_MAX_TURN);
+
+        // Slew limit so it can’t jump violently frame-to-frame
+        double delta = clamp(u - lastTurnCmd, -TURN_SLEW_PER_LOOP, TURN_SLEW_PER_LOOP);
+        lastTurnCmd += delta;
+
+        return lastTurnCmd;
+    }
 
     public double getDistance() {
         LLResult r = latest();
@@ -245,40 +273,16 @@ public class VisionAlign {
         FiducialResult tag = findGoalTag(r);
         if (tag == null) return -1;
 
-        // Tag position relative to the robot (robot-space)
-        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();  // exists in the FTC Limelight API :contentReference[oaicite:1]{index=1}
+        Pose3D tagPoseRobot = tag.getTargetPoseRobotSpace();
         if (tagPoseRobot == null) return -1;
 
-        Position p = tagPoseRobot.getPosition(); // :contentReference[oaicite:2]{index=2}
-
-        // NOTE: In FTC SDK, Position stores x/y/z in its DistanceUnit.
-        // Commonly these are meters when coming from Limelight Pose3D.
-        double x = p.x; // forward (meters)
-        double y = p.y; // right   (meters)
-        return Math.hypot(x, y); // ground distance (meters)
+        Position p = tagPoseRobot.getPosition();
+        double x = p.x;
+        double y = p.y;
+        return Math.hypot(x, y);
     }
 
-
-    private static double turnCmd(double tx) {
-        if (Math.abs(tx) <= RobotConstants.LL_AIM_TOL_DEG) return 0;
-
-        double u = RobotConstants.LL_TURN_DIRECTION * RobotConstants.LL_K_TURN * tx;
-        u += Math.signum(u) * RobotConstants.LL_MIN_TURN;
-        return clamp(u, -RobotConstants.LL_MAX_TURN, RobotConstants.LL_MAX_TURN);
-    }
-
-    private static double testTurnCmd(double bearingDeg) {
-        if (Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG) return 0;
-
-        double u = TEST_TURN_KP * bearingDeg;
-
-        // Avoid adding static-friction boost when close to target to reduce overshoot.
-        if (Math.abs(bearingDeg) > 3.0) {
-            u += Math.signum(u) * TEST_TURN_MIN;
-        }
-
-        return clamp(u, -TEST_TURN_MAX, TEST_TURN_MAX);
-    }
+    // ---------------------------- Existing helpers ----------------------------
 
     private static double forwardCmd(double ta) {
         double err = RobotConstants.LL_TARGET_AREA - ta;
@@ -289,8 +293,8 @@ public class VisionAlign {
         return clamp(u, -RobotConstants.LL_MAX_FORWARD, RobotConstants.LL_MAX_FORWARD);
     }
 
-    private static boolean onTarget(double tx, double ta) {
-        return Math.abs(tx) <= RobotConstants.LL_AIM_TOL_DEG &&
+    private static boolean onTarget(double bearingDeg, double ta) {
+        return Math.abs(bearingDeg) <= RobotConstants.LL_AIM_TOL_DEG &&
                 ta >= RobotConstants.LL_TARGET_AREA - RobotConstants.LL_APPROACH_TOL_TA;
     }
 

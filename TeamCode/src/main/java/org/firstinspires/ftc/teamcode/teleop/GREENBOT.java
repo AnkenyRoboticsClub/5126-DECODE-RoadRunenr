@@ -22,7 +22,6 @@ public class GREENBOT extends LinearOpMode {
         imu     = new ImuUtil(hardwareMap);
         shooter = new Shooter(hardwareMap);
         vision  = new VisionAlign(drive, imu);
-        vision.start(hardwareMap);
 
         for (LynxModule hub : hardwareMap.getAll(LynxModule.class)) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
@@ -31,8 +30,9 @@ public class GREENBOT extends LinearOpMode {
 
         waitForStart();
         if (isStopRequested()) return;
-
+        vision.start(hardwareMap);
         while (opModeIsActive()) {
+
             double y  = -gamepad1.left_stick_y;
             double x  =  gamepad1.left_stick_x;
             double rx =  gamepad1.right_stick_x;
