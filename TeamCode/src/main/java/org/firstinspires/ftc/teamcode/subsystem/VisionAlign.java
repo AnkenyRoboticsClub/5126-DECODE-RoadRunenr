@@ -4,9 +4,11 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.limelightvision.LLResultTypes.FiducialResult;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.common.RobotConstants;
@@ -37,6 +39,8 @@ public class VisionAlign {
     private final ImuUtil imu; // not required for robot-centric, but keeping because you pass it in
     private Limelight3A limelight;
 
+    public static DistanceSensor distance;
+
     private double filteredBearingDeg = 0.0;
     private double lastTurnCmd = 0.0;
 
@@ -49,6 +53,8 @@ public class VisionAlign {
         limelight = hw.get(Limelight3A.class, RobotConstants.LL_DEVICE_NAME);
         limelight.setPollRateHz(100);
         limelight.start();
+
+        distance = hw.get(DistanceSensor.class, RobotConstants.DISTANCE);
     }
 
     public void stop() {
@@ -106,7 +112,6 @@ public class VisionAlign {
 
         return onTarget(bearingDeg, r.getTa());
     }
-
     public boolean faceTagUntil(LinearOpMode op) {
         ElapsedTime t = new ElapsedTime();
         while (op.opModeIsActive() && t.seconds() < RobotConstants.LL_ALIGN_TIMEOUT_S) {
@@ -301,4 +306,9 @@ public class VisionAlign {
     private static double clamp(double v, double lo, double hi) {
         return Math.max(lo, Math.min(hi, v));
     }
+
+    public static double getBackupDistance() {
+        return distance.getDistance(DistanceUnit.INCH);
+    }
+
 }

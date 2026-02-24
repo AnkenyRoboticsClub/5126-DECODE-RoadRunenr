@@ -55,11 +55,13 @@ public class GREENBOT extends LinearOpMode {
                 if (gamepad1.right_bumper) drive.assistRight();
             }
 
+            if (gamepad1.x)    drive.jossel(this);
+
             if (gamepad1.dpad_right) drive.nudgeRight(this);
             if (gamepad1.dpad_left)  drive.nudgeLeft(this);
             if (gamepad1.dpad_up)    drive.nudgeForward(this);
             if (gamepad1.dpad_down)  drive.nudgeBack(this);
-            //Buttons left: y,x
+            //Buttons left: y
             //============================
 
             if (gamepad2.x) {

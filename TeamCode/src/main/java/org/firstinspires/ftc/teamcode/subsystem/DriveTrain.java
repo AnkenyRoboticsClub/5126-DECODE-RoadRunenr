@@ -81,6 +81,11 @@ public class DriveTrain {
     public void nudgeForward(LinearOpMode op){ nudge( RobotConstants.SCOOTCH_POWER,  RobotConstants.SCOOTCH_POWER,  RobotConstants.SCOOTCH_POWER,  RobotConstants.SCOOTCH_POWER, op); }
     public void nudgeBack(LinearOpMode op)  { nudge(-RobotConstants.SCOOTCH_POWER, -RobotConstants.SCOOTCH_POWER, -RobotConstants.SCOOTCH_POWER, -RobotConstants.SCOOTCH_POWER, op); }
 
+    public void jossel (LinearOpMode op){
+        nudgeForward(op);
+        nudgeBack(op);
+    }
+
     private void nudge(double flP, double frP, double blP, double brP, LinearOpMode op) {
         fl.setPower(flP); fr.setPower(frP); bl.setPower(blP); br.setPower(brP);
         op.sleep(RobotConstants.SCOOTCH_DURATION_MS);

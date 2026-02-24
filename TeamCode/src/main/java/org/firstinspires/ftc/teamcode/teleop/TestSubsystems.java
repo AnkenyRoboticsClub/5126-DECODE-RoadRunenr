@@ -173,7 +173,6 @@ public class TestSubsystems extends LinearOpMode {
                 if (gamepad1.b) vision.aimAndApproachStepRobotCentric();
 
                 telemetry.addLine("Vison System");
-                telemetry.addLine("!!!NOT IMPLEMENTED YET!!!");
                 telemetry.addLine("========================================");
                 telemetry.addLine("Joysticks - ");
                 telemetry.addLine("Left  Trigger  -");
@@ -183,6 +182,7 @@ public class TestSubsystems extends LinearOpMode {
                 telemetry.addLine("Gampad X  -");
                 telemetry.addLine("Gampad Y  -");
                 telemetry.addLine("Dpads -");
+                telemetry.addData("Distance:", VisionAlign.getBackupDistance());
                 telemetry.update();
             }
             else if (option == 4){

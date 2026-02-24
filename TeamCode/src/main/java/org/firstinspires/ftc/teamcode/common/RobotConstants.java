@@ -6,7 +6,7 @@ public class RobotConstants {
     // Drive speed scales, power # is from 0 -> 1, 0=0% and 1=100%
     public static final double TURN_SPEED          = 0.7; //Prob should stay the same as default speed, honestly idk
     public static final double MOVING_SPEED_SLOW   = 0.4;
-    public static final double MOVING_SPEED        = 0.6; //Default Speed
+    public static final double MOVING_SPEED        = 0.8; //Default Speed
     public static final double MOVING_SPEED_FAST   = 1.0; //Usualy max power
 
     // Shooter tuning
@@ -38,6 +38,8 @@ public class RobotConstants {
     public static final String S_INTAKE = "servoI";
 
     public static final String PINPOINT = "pinpoint";
+
+    public static final String DISTANCE = "distance";
 
     // IMU name
     public static final String IMU = "imu";

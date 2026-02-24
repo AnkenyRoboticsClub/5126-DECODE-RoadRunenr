@@ -28,6 +28,7 @@ public class Shooter {
     private static final double AT_SPEED_TOL_RPM = 50; // how close is "good enough"
 
     private final InterpolatingMap FlywheelMap = new InterpolatingMap();
+    private final InterpolatingMap BackupMap = new InterpolatingMap();
     PIDFCoefficients pid = new PIDFCoefficients(10, 3, 0, 12);
 
     // TeleOp helper state: fire only once while button is held
@@ -46,9 +47,35 @@ public class Shooter {
         // Encoder needed for velocity
         fly.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         fly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        //fly.setVelocityPIDFCoefficients(4, 0, 1.0, 12);
         fly.setVelocityPIDFCoefficients(10, 3, 0, 12);
+        /*
+         * FLYWHEEL VELOCITY PIDF TUNING NOTES
+         *
+         * If flywheel oscillates during initial spool-up:
+         * 1. LOWER P first (most common cause).
+         *    Try: P = 6 → 4 → 3
+         *
+         * 2. Add small D for damping if overshooting.
+         *    Try: D = 0.5 → 1.0 → 2.0
+         *
+         * 3. Reduce or disable I while tuning.
+         *    Large I (like 3) can cause wind-up during spool.
+         *    Tune with I = 0 first, then add small value (0.2–0.5) only if needed.
+         *
+         * 4. Make sure F is close to correct.
+         *    F should handle most of the steady-state velocity.
+         *    If F is too low, PID has to fight harder → oscillation.
+         *
+         * Recommended test baseline:
+         * fly.setVelocityPIDFCoefficients(4, 0, 1.0, 12);
+         *
+         * Tune order: F → P → D → small I (last)
+         */
 
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
+        intakeServo.setDirection(DcMotorSimple.Direction.REVERSE);
 
         fly.setPower(0);
         intake.setPower(0);
@@ -60,6 +87,12 @@ public class Shooter {
         FlywheelMap.put(0.041, 770);//Peak of mid triangle | 77in
         FlywheelMap.put(0.88, 770); //TBH we just putting points in
         FlywheelMap.put(0.475, 940.0);  // far shot | 116in
+        // FOR USING DISTANCE SENSOR v
+        BackupMap.put(0.0, 670.0);
+        BackupMap.put(0.01, 670.0);   // close shot | 21in
+        BackupMap.put(0.041, 770);//Peak of mid triangle | 77in
+        BackupMap.put(0.88, 770); //TBH we just putting points in
+        BackupMap.put(0.475, 940.0);  // far shot | 116in
     }
 
     private double getFlywheelRpmInstant() {
@@ -177,6 +210,11 @@ public class Shooter {
     public double shootByDistance(double distance, LinearOpMode op){
         customShoot(FlywheelMap.get(distance), op);
         return FlywheelMap.get(distance);
+    }
+
+    public double shootByDistanceBackup(double distance, LinearOpMode op){
+        customShoot(BackupMap.get(distance), op);
+        return BackupMap.get(distance);
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.auto;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.subsystem.AutoDrive;
@@ -9,6 +10,7 @@ import org.firstinspires.ftc.teamcode.subsystem.ImuUtil;
 import org.firstinspires.ftc.teamcode.subsystem.Shooter;
 import org.firstinspires.ftc.teamcode.subsystem.VisionAlign;
 
+@Disabled
 @Autonomous(name = "3BallMotif", group = "Auto")
 public class LLMotifAuto extends LinearOpMode {
 
