@@ -33,6 +33,8 @@ public class GREENBOT extends LinearOpMode {
         vision.start(hardwareMap);
         while (opModeIsActive()) {
 
+            shooter.update();
+
             double y  = -gamepad1.left_stick_y;
             double x  =  gamepad1.left_stick_x;
             double rx =  gamepad1.right_stick_x;

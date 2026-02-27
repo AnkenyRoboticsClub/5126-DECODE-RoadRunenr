@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.teamcode.common.InterpolatingMap;
+import com.qualcomm.robotcore.util.BatteryChecker;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.common.RobotConstants;
 
@@ -18,7 +20,6 @@ public class Shooter {
     private final Servo kick;
     private final CRServo intakeServo;
     private final DcMotor intake;
-
     // RPM tracking
     private double rpmFiltered = 0.0;
     private double targetRpm = 0.0;
@@ -42,6 +43,8 @@ public class Shooter {
     private boolean kickerCycleActive = false;
     private long kickerExtendStartMs = 0;
     private long lastCustomShootFlickMs = 0;
+
+    // TeleOp helper state: fire only once while button is held
 
     public Shooter(HardwareMap hw) {
         fly  = (DcMotorEx) hw.dcMotor.get(RobotConstants.M_FLY);
