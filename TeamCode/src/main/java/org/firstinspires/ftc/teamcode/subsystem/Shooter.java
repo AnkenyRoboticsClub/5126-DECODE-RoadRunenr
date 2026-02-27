@@ -195,7 +195,6 @@ public class Shooter {
 
     public void flick(LinearOpMode op) {
         setKicker(true);
-        op.sleep(RobotConstants.KICK_TIME_MS);
         setKicker(false);
     }
 
