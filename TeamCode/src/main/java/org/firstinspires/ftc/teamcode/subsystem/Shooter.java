@@ -38,6 +38,11 @@ public class Shooter {
     // TeleOp helper state: fire only once while button is held
     private boolean distanceShotFiredThisHold = false;
 
+    // Non-blocking kicker timing state
+    private boolean kickerCycleActive = false;
+    private long kickerExtendStartMs = 0;
+    private long lastCustomShootFlickMs = 0;
+
     public Shooter(HardwareMap hw) {
         fly  = (DcMotorEx) hw.dcMotor.get(RobotConstants.M_FLY);
         kick = hw.servo.get(RobotConstants.S_KICK);
@@ -110,6 +115,11 @@ public class Shooter {
     public void update() {
         double rpmNow = getFlywheelRpmInstant();
         rpmFiltered = (RPM_ALPHA * rpmNow) + ((1.0 - RPM_ALPHA) * rpmFiltered);
+
+        if (kickerCycleActive && (System.currentTimeMillis() - kickerExtendStartMs) >= RobotConstants.KICK_TIME_MS) {
+            setKicker(false);
+            kickerCycleActive = false;
+        }
     }
 
     /** Measured (filtered) flywheel RPM. */
@@ -173,8 +183,17 @@ public class Shooter {
 
     public void customShoot(double rpm, LinearOpMode op){
         setFlywheelRpm(rpm);
-        if (flywheelAtSpeed()){
-            intake();
+
+        if (!flywheelAtSpeed()) {
+            return;
+        }
+
+        intake();
+
+        long now = System.currentTimeMillis();
+        if (!kickerCycleActive && (now - lastCustomShootFlickMs) >= 1000) {
+            flick(op);
+            lastCustomShootFlickMs = now;
         }
     }
 
@@ -195,8 +214,8 @@ public class Shooter {
 
     public void flick(LinearOpMode op) {
         setKicker(true);
-        op.sleep(RobotConstants.KICK_TIME_MS);
-        setKicker(false);
+        kickerExtendStartMs = System.currentTimeMillis();
+        kickerCycleActive = true;
     }
 
     public void feedOne(LinearOpMode op) {
@@ -236,6 +255,7 @@ public class Shooter {
         if (!triggerHeld) {
             distanceShotFiredThisHold = false;
             setKicker(false);
+            kickerCycleActive = false;
             return mappedRpm;
         }
 
