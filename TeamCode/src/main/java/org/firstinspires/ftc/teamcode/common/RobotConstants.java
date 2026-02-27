@@ -18,7 +18,7 @@ public class RobotConstants {
 
     // Kicker positions (tune these!)
     public static final double KICK_RETRACT = -0.10; // Down / hidden position
-    public static final double KICK_EXTEND  = 0.30; // Extended to eject balls
+    public static final double KICK_EXTEND  = 0.45; // Extended to eject balls
     public static final long   KICK_TIME_MS = 100;  // How long to be extended for in ms
 
     // Nudge (“scootch”)

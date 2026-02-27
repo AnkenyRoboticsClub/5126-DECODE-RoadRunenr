@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.subsystem.Shooter;
 import org.firstinspires.ftc.teamcode.subsystem.VisionAlign;
 
 
-@TeleOp(name="Test Robot", group="Pedro Pathing")
+@TeleOp(name="Test Robot", group="Tuning")
 public class TestSubsystems extends LinearOpMode {
     private DriveTrain drive;
     private ImuUtil imu;
@@ -30,7 +30,7 @@ public class TestSubsystems extends LinearOpMode {
         int option = 1;
         boolean prevLeftBumper  = false;
         boolean prevRightBumper = false;
-        double rpm = 0;
+        double rpm = 600;
 
         waitForStart();
         if (isStopRequested()) return;
@@ -138,7 +138,7 @@ public class TestSubsystems extends LinearOpMode {
                 telemetry.addLine("========================================");
                 telemetry.addData("Flywheel RPM:", shooter.getFlywheelRpm());
                 telemetry.addData("CustomRPM:", rpm);
-                telemetry.addData("Distance:", vision.getDistance());
+                telemetry.addData("Distance:", vision.getBackupDistance());
                 telemetry.update();
             }
             else if (option == 3){
@@ -182,7 +182,7 @@ public class TestSubsystems extends LinearOpMode {
                 telemetry.addLine("Gampad X  -");
                 telemetry.addLine("Gampad Y  -");
                 telemetry.addLine("Dpads -");
-                telemetry.addData("Distance:", VisionAlign.getBackupDistance());
+                telemetry.addData("Distance:", vision.getBackupDistance());
                 telemetry.update();
             }
             else if (option == 4){

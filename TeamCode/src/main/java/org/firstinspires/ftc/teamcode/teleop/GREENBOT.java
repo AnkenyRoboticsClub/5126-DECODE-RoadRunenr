@@ -84,7 +84,7 @@ public class GREENBOT extends LinearOpMode {
             if (gamepad2.right_bumper) shooter.intakeFW();// For temp human player feeding
 
             if (gamepad2.a) shooter.feedOne(this); // extend + retract
-            if (gamepad2.b) shooter.shootByDistance(vision.getDistance(), this);
+            if (gamepad2.b) shooter.shootByDistance(vision.getBackupDistance(), this);
 
             shooter.shootByDistanceHoldOnce(gamepad2.y, vision.getDistance(), this);
             //Buttons left: Y, start, options, Dpads
@@ -101,6 +101,7 @@ public class GREENBOT extends LinearOpMode {
                              Math.abs(drive.getRPM(drive.bl)) + Math.abs(drive.getRPM(drive.br))) / 4.0;
             telemetry.addData("Avg (abs)", "%.1f", avgAbs);
             telemetry.addData("Aim Assist", gamepad1.a ? "ON (hold A)" : "OFF");
+            telemetry.addData("Distance:", vision.getBackupDistance());
             telemetry.update();
         }
     }

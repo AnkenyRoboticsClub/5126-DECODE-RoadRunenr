@@ -22,14 +22,18 @@ public class Shooter {
     // RPM tracking
     private double rpmFiltered = 0.0;
     private double targetRpm = 0.0;
-
     // Tuning
     private static final double RPM_ALPHA = 0.25; // 0..1 (higher = less smoothing)
     private static final double AT_SPEED_TOL_RPM = 50; // how close is "good enough"
 
     private final InterpolatingMap FlywheelMap = new InterpolatingMap();
     private final InterpolatingMap BackupMap = new InterpolatingMap();
-    PIDFCoefficients pid = new PIDFCoefficients(10, 3, 0, 12);
+
+    public double P = 17.0;
+    public double I = 0.30;
+    public double D = 2.0;
+    public double F = 17.0;
+    PIDFCoefficients pid = new PIDFCoefficients(P, I, D, F);
 
     // TeleOp helper state: fire only once while button is held
     private boolean distanceShotFiredThisHold = false;
@@ -49,7 +53,7 @@ public class Shooter {
         fly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //fly.setVelocityPIDFCoefficients(4, 0, 1.0, 12);
-        fly.setVelocityPIDFCoefficients(10, 3, 0, 12);
+        fly.setVelocityPIDFCoefficients(15, 3, 0, 12);
         /*
          * FLYWHEEL VELOCITY PIDF TUNING NOTES
          *
@@ -88,11 +92,13 @@ public class Shooter {
         FlywheelMap.put(0.88, 770); //TBH we just putting points in
         FlywheelMap.put(0.475, 940.0);  // far shot | 116in
         // FOR USING DISTANCE SENSOR v
-        BackupMap.put(0.0, 670.0);
-        BackupMap.put(0.01, 670.0);   // close shot | 21in
-        BackupMap.put(0.041, 770);//Peak of mid triangle | 77in
-        BackupMap.put(0.88, 770); //TBH we just putting points in
-        BackupMap.put(0.475, 940.0);  // far shot | 116in
+        BackupMap.put(0.0, 600.0);
+        BackupMap.put(21.0, 600.0);   // close shot | 21in
+        BackupMap.put(23.0, 600.0);
+        BackupMap.put(42.0, 600.0);
+        BackupMap.put(46.0, 690.0);
+        BackupMap.put(322.0, 700.0);
+        //BackupMap.put(116.0, 940.0);  // far shot | 116in
     }
 
     private double getFlywheelRpmInstant() {
@@ -124,6 +130,10 @@ public class Shooter {
     // ----- Flywheel controls -----
     public boolean flywheelAtSpeed(){
         return atSpeed();
+    }
+
+    public void applyPIDF() {
+        fly.setVelocityPIDFCoefficients(P, I, D, F);
     }
 
 
@@ -164,9 +174,7 @@ public class Shooter {
     public void customShoot(double rpm, LinearOpMode op){
         setFlywheelRpm(rpm);
         if (flywheelAtSpeed()){
-            feedOne(op);
             intake();
-            op.sleep(RobotConstants.KICK_TIME_MS);
         }
     }
 
