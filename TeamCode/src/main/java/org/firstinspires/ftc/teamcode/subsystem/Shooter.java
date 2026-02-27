@@ -41,6 +41,7 @@ public class Shooter {
     // Non-blocking kicker timing state
     private boolean kickerCycleActive = false;
     private long kickerExtendStartMs = 0;
+    private long lastCustomShootFlickMs = 0;
 
     public Shooter(HardwareMap hw) {
         fly  = (DcMotorEx) hw.dcMotor.get(RobotConstants.M_FLY);
@@ -182,8 +183,17 @@ public class Shooter {
 
     public void customShoot(double rpm, LinearOpMode op){
         setFlywheelRpm(rpm);
-        if (flywheelAtSpeed()){
-            intake();
+
+        if (!flywheelAtSpeed()) {
+            return;
+        }
+
+        intake();
+
+        long now = System.currentTimeMillis();
+        if (!kickerCycleActive && (now - lastCustomShootFlickMs) >= 1000) {
+            flick(op);
+            lastCustomShootFlickMs = now;
         }
     }
 
