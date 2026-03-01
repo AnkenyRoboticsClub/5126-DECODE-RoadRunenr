@@ -53,6 +53,9 @@ import org.firstinspires.ftc.teamcode.subsystem.Shooter;
  *  ± 50 RPM consistently, you're ready to shoot.
  * ============================================================
  */
+
+/// yo twin right simpler -jacob
+// Yo twin comment right, and no be better at code :) - Jayden
 @TeleOp(name = "Flywheel PIDF Tuner", group = "Tuning")
 public class PIDF_Tuner extends LinearOpMode {
 

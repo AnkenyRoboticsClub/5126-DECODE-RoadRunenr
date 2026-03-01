@@ -30,10 +30,10 @@ public class Shooter {
     private final InterpolatingMap FlywheelMap = new InterpolatingMap();
     private final InterpolatingMap BackupMap = new InterpolatingMap();
 
-    public double P = 17.0;
-    public double I = 0.30;
+    public double P = 12.0;
+    public double I = 0.20;
     public double D = 2.0;
-    public double F = 17.0;
+    public double F = 14.25;
     PIDFCoefficients pid = new PIDFCoefficients(P, I, D, F);
 
     // TeleOp helper state: fire only once while button is held
@@ -61,7 +61,7 @@ public class Shooter {
         fly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         //fly.setVelocityPIDFCoefficients(4, 0, 1.0, 12);
-        fly.setVelocityPIDFCoefficients(15, 3, 0, 12);
+        fly.setVelocityPIDFCoefficients(P, I, D, F);
         /*
          * FLYWHEEL VELOCITY PIDF TUNING NOTES
          *
@@ -223,6 +223,13 @@ public class Shooter {
 
     public void feedOne(LinearOpMode op) {
         flick(op);
+    }
+
+    public void dumbFlick(LinearOpMode op) {
+        kick.setPosition(.5);
+    }
+    public void dumbFlickD(LinearOpMode op){
+        kick.setPosition(0);
     }
 
     public boolean waitForAtSpeed(LinearOpMode op, long timeoutMs) {

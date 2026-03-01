@@ -36,7 +36,6 @@ public class TestSubsystems extends LinearOpMode {
         if (isStopRequested()) return;
 
         while (opModeIsActive()) {
-            shooter.update();
 
             double y  = -gamepad1.left_stick_y;
             double x  =  gamepad1.left_stick_x;

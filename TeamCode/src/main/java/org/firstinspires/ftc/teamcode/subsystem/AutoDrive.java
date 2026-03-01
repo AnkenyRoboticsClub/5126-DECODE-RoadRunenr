@@ -118,6 +118,13 @@ public class AutoDrive {
         br.setPower(.5);
     }
 
+    public void driveRight() {
+        fl.setPower(.3);
+        bl.setPower(-.3);
+        fr.setPower(-.3);
+        br.setPower(.3);
+    }
+
     /** Turn in place to an absolute heading (deg, -180..180) using IMU (simple P). */
     public void turnToHeadingDegrees(LinearOpMode op, ImuUtil imu, double targetDeg, double maxPower, double kP) {
         while (op.opModeIsActive()) {

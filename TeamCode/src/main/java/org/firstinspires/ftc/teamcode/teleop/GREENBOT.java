@@ -33,8 +33,6 @@ public class GREENBOT extends LinearOpMode {
         vision.start(hardwareMap);
         while (opModeIsActive()) {
 
-            shooter.update();
-
             double y  = -gamepad1.left_stick_y;
             double x  =  gamepad1.left_stick_x;
             double rx =  gamepad1.right_stick_x;
@@ -58,11 +56,13 @@ public class GREENBOT extends LinearOpMode {
             }
 
             if (gamepad1.x)    drive.jossel(this);
+            if (gamepad1.y)    shooter.intakeReverse();
 
             if (gamepad1.dpad_right) drive.nudgeRight(this);
             if (gamepad1.dpad_left)  drive.nudgeLeft(this);
             if (gamepad1.dpad_up)    drive.nudgeForward(this);
             if (gamepad1.dpad_down)  drive.nudgeBack(this);
+
             //Buttons left: y
             //============================
 
@@ -86,9 +86,12 @@ public class GREENBOT extends LinearOpMode {
             if (gamepad2.right_bumper) shooter.intakeFW();// For temp human player feeding
 
             if (gamepad2.a) shooter.feedOne(this); // extend + retract
-            if (gamepad2.b) shooter.shootByDistance(vision.getBackupDistance(), this);
+            if (gamepad2.b) shooter.shootByDistance(VisionAlign.getBackupDistance(), this);
 
-            shooter.shootByDistanceHoldOnce(gamepad2.y, vision.getDistance(), this);
+            if (gamepad2.dpad_up) shooter.dumbFlick(this);
+            if (gamepad2.dpad_down) shooter.dumbFlickD(this);
+
+            // shooter.shootByDistanceHoldOnce(gamepad2.y, vision.getDistance(), this);
             //Buttons left: Y, start, options, Dpads
             //=============================
 

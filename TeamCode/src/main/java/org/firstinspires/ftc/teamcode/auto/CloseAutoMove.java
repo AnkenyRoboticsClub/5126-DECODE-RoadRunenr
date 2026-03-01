@@ -4,13 +4,11 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.subsystem.AutoDrive;
-import org.firstinspires.ftc.teamcode.subsystem.DriveTrain;
 import org.firstinspires.ftc.teamcode.subsystem.ImuUtil;
 import org.firstinspires.ftc.teamcode.subsystem.Shooter;
-import org.firstinspires.ftc.teamcode.subsystem.VisionAlign;
 
-@Autonomous(name = "FarAuto3B", group = "Auto")
-public class Ball3Far extends LinearOpMode {
+@Autonomous(name = "CloseAuto3Bw/MoveRight", group = "Auto")
+public class CloseAutoMove extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -18,12 +16,8 @@ public class Ball3Far extends LinearOpMode {
         AutoDrive drive = new AutoDrive(hardwareMap);
         ImuUtil imu = new ImuUtil(hardwareMap);
         Shooter shooter = new Shooter(hardwareMap);
-        DriveTrain teleDrive = new DriveTrain(hardwareMap); // used for LL movement
-        VisionAlign vision = new VisionAlign(teleDrive, imu);
 
         imu.resetYaw();
-        vision.start(hardwareMap);
-
         telemetry.addLine("LL Auto Ready");
         telemetry.update();
 
@@ -31,37 +25,29 @@ public class Ball3Far extends LinearOpMode {
         if (isStopRequested()) return;
 
         // ---------------------------
-        // 1. Aim at tag
+        // 1. Blind backup while holding heading
         // ---------------------------
-        //vision.faceTagUntil(this);
-        // sleep(250);
+        drive.driveStraightInchesHoldHeading(this, imu, 10, 0.10, 0.05, 0.10);
+        sleep(750);
 
         // ---------------------------
-        // 2. Spin to far-shot RPM
+        // 2. Spin up and kick first ball
         // ---------------------------
-        shooter.farShoot();
-        shooter.waitForAtSpeed(this, 2500);
-
-        // ---------------------------
-        // 3. Kick first ball
-        // ---------------------------
+        shooter.setFlywheelRpm(630);
+        shooter.waitForAtSpeed(this, 2200);
         shooter.feedOne(this);
 
         // ---------------------------
-        // 4. Wait for RPM recovery, then intake next 2
+        // 3. Wait for recovery then intake next 2
         // ---------------------------
-        shooter.waitForAtSpeed(this, 1500);
+        shooter.waitForAtSpeed(this, 1200);
         shooter.intake();
-        sleep(2200);
+        sleep(2500);
         shooter.stopIntake();
 
-        // ---------------------------
-        // 5. Move off line
-        // ---------------------------
-        drive.driveForwardSim();
-        sleep(500);
-
         shooter.stop();
+        drive.driveRight();
+        sleep(1000);
         drive.stopAll();
 
         telemetry.addLine("LL Auto Done!");
